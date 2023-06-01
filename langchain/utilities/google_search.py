@@ -99,7 +99,18 @@ class GoogleSearchAPIWrapper(BaseModel):
                 snippets.append(result["snippet"])
 
         return " ".join(snippets)
-
+    
+    def run_getlink(self,query:str) -> str:
+        """Run query through GoogleSearch and parse result to get link"""
+        links = []
+        results = self._google_search_results(query,num=self.k)
+        if len(results)==0:
+            return "No Good Google Search Result was found"
+        for result in results:
+            if 'link' in result:
+                links.append(result['link'])
+        return ",".join(links)
+    
     def results(self, query: str, num_results: int) -> List[Dict]:
         """Run query through GoogleSearch and return metadata.
 

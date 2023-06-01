@@ -10,6 +10,10 @@ class AutoGPTAction(NamedTuple):
     name: str
     args: Dict
 
+class AutoGPTThoughts(NamedTuple):
+    name: str
+    args: Dict
+
 
 class BaseAutoGPTOutputParser(BaseOutputParser):
     @abstractmethod
@@ -24,6 +28,31 @@ def preprocess_json_input(input_str: str) -> str:
         r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", input_str
     )
     return corrected_str
+
+class AutoGPTOutputThoughtParser(BaseAutoGPTOutputParser):
+    def parse(self, text: str) -> AutoGPTAction:
+        try:
+            parsed = json.loads(text, strict=False)
+        except json.JSONDecodeError:
+            preprocessed_text = preprocess_json_input(text)
+            try:
+                parsed = json.loads(preprocessed_text, strict=False)
+            except Exception:
+                return AutoGPTAction(
+                    name="ERROR",
+                    args={"content": f"Could not parse invalid json: {text}"},
+                )
+        try:
+            return AutoGPTThoughts(
+                name = 'thoughts',
+                args = {'content':parsed["thoughts"]}
+            )
+        except (KeyError, TypeError):
+            # If the command is null or incomplete, return an erroneous tool
+            return AutoGPTThoughts(
+                name="ERROR", args={"content": f"Incomplete thiughts: {parsed}"}
+            )
+
 
 
 class AutoGPTOutputParser(BaseAutoGPTOutputParser):

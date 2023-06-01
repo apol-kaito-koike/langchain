@@ -19,6 +19,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     token_counter: Callable[[str], int]
     send_token_limit: int = 4196
 
+
     def construct_full_prompt(self, goals: List[str]) -> str:
         prompt_start = (
             "Your decisions must always be made independently "

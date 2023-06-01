@@ -150,6 +150,16 @@ def get_prompt(tools: List[BaseTool]) -> str:
         'Exclusively use the commands listed in double quotes e.g. "command name"'
     )
 
+    prompt_generator.add_constraint(
+        "all information you can use is based on fact"
+    )
+    prompt_generator.add_constraint(
+        "if a URL is not useful for seek, you dont use this URL for your seeking."
+    )
+    prompt_generator.add_constraint(
+        ""
+    )
+
     # Add commands to the PromptGenerator object
     for tool in tools:
         prompt_generator.add_tool(tool)

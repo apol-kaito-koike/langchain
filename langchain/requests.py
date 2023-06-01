@@ -1,6 +1,7 @@
 """Lightweight wrapper around requests library, with async support."""
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, Optional
+from bs4 import BeautifulSoup
 
 import aiohttp
 import requests
@@ -100,6 +101,9 @@ class Requests(BaseModel):
         async with self._arequest("DELETE", url, **kwargs) as response:
             yield response
 
+def _clean_url(url: str) -> str:
+    """Strips quotes from the url."""
+    return url.strip("\"'")
 
 class TextRequestsWrapper(BaseModel):
     """Lightweight wrapper around requests library.
@@ -109,6 +113,8 @@ class TextRequestsWrapper(BaseModel):
 
     headers: Optional[Dict[str, str]] = None
     aiosession: Optional[aiohttp.ClientSession] = None
+
+    
 
     class Config:
         """Configuration for this pydantic object."""
@@ -139,6 +145,21 @@ class TextRequestsWrapper(BaseModel):
     def delete(self, url: str, **kwargs: Any) -> str:
         """DELETE the URL and return the text."""
         return self.requests.delete(url, **kwargs).text
+    
+    def get_multi_text(self, urls:str, **kwargs: Any ) -> list:
+        """get page text of multiple urls and concatnate all"""
+        url_list = urls.split(',')
+        html_codes = [self.requests.get(_clean_url(url),**kwargs).text for url in url_list]
+        text_list = [BeautifulSoup(html_code, 'html.parser').get_text() for html_code in html_codes]
+        return text_list
+        
+    async def aget_multi_text(self, urls:str, **kwargs: Any ) -> list:
+        """run the tool asynchronously"""
+        url_list = urls.split(',')
+        html_codes = [self.requests.aget(_clean_url(url),**kwargs).text() for url in url_list]
+        text_list = [BeautifulSoup(html_code, 'html.parser').get_text() for html_code in html_codes]
+        return await text_list
+
 
     async def aget(self, url: str, **kwargs: Any) -> str:
         """GET the URL and return the text asynchronously."""
