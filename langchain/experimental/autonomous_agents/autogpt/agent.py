@@ -90,14 +90,16 @@ class AutoGPT:
         summarize_chain = load_summarize_chain(llm,chain_type='stuff')
 
         feedback_prompt_text = "Below is a message from me, an AI Agent, assuming the role of {ai_role}.whilst keeping knowledge of my slight limitations as an AI Agent "\
-                            "Please evaluate my thought process, reasoning,criticism, and plan, and provide a concise paragraph outlining potential improvements."\
-                            "Consider adding or removing ideas that do not align with my role and explaining why, prioritizing thoughts based on their significance,"\
-                            "or simply refining my overall thought process. \n"\
-                            "{feedback_thoughts}"
+                            "Please evaluate my thought process, reasoning, criticism, plan, and provide a concise paragraph outlining potential improvements."\
+                            "Consider adding or removing ideas that do not align with my role and explaining why and do not loop action, prioritizing thoughts based on their significance,"\
+                            "or simply refining my overall thought process. your response should be string sentense style, and be considered your memory. \n"\
+                            "{feedback_thoughts}'\n"\
+                            'memory:{memory}'
+        
         
         feedback_prompt = PromptTemplate(
             template = feedback_prompt_text,
-            input_variables = ['ai_role','feedback_thoughts']
+            input_variables = ['ai_role','feedback_thoughts','memory']
         )
 
         human_feedback_tool = HumanInputRun() if human_in_the_loop else None
@@ -157,7 +159,7 @@ class AutoGPT:
             criticism = thoughts.get("criticism", "")
             feedback_thoughts = thought + reasoning + plan + criticism
             feedback_response =  self.feedback_chain.run(
-                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts}
+                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts,'memory':self.memory}
             )
         else:
             status = gpt_thoughts.name
@@ -188,30 +190,22 @@ class AutoGPT:
                 memory=self.memory,
                 user_input=user_input,
             )
-            print(assistant_reply)
+            print('assistant_reply:\n',assistant_reply)
+            print('='*40)
             # Print Assistant thoughts
             self.full_message_history.append(HumanMessage(content=user_input))
             self.full_message_history.append(AIMessage(content=assistant_reply))
 
             action = self.output_parser.parse(assistant_reply)
-            print('got actions..')
             # Get command name and arguments
             action = self.output_parser.parse(assistant_reply)
             tools = {t.name: t for t in self.tools}
-            print(f'Doing {action.name}')
             if action.name == FINISH_NAME:
                 return action.args["response"]
             if action.name in tools:
                 tool = tools[action.name]
                 try:
                     observation = tool.run(action.args)
-                    if (action.name == 'get'):
-                        print('Getting information...')
-                        #full_observation = "\n".join(observation)
-                        observation = self._summarize_text(observation)
-                        print(f'string size : {len(observation)}')
-
-
                 except ValidationError as e:
                     observation = (
                         f"Validation Error in args: {str(e)}, args: {action.args}"
@@ -230,22 +224,12 @@ class AutoGPT:
                     f"Please refer to the 'COMMANDS' list for available "
                     f"commands and only respond in the specified JSON format."
                 )
-
+            print('here is action result :',result)
+            print('='*40)
 
             memory_to_add = (
                 f"Assistant Reply: {assistant_reply} " f"\nResult: {result} \n"
             )
-
-            if (action.name == 'get_link') and (len(observation)>0):
-                urls = observation.split(',')
-                urls_bullet = " ".join([f"-{url}\n" for url in urls])
-                URL_list = f"here is a useful URL list : \n {urls_bullet}"
-                memory_to_add += (
-                    f"{URL_list}"
-                )
-                #self.memory.add_documents([Document(page_content=URL_list)])
-                #self.full_message_history.append(SystemMessage(content=URL_list))
-                #print(URL_list)
 
             if self.feedback_tool is not None:
                 feedback = f"\n{self.feedback_tool.run('Input: ')}"
@@ -268,7 +252,8 @@ class AutoGPT:
                     feedback_memory_to_add = (
                         f"Self Feedback: {feedback}"
                     )
-                    print(feedback)
+                    print('feedback:\n',feedback)
+                    print('='*40)
                     self.memory.add_documents([Document(page_content=feedback_memory_to_add)])
                     self.full_message_history.append(AIMessage(content=feedback))
 

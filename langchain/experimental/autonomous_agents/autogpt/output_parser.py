@@ -27,7 +27,18 @@ def preprocess_json_input(input_str: str) -> str:
     corrected_str = re.sub(
         r'(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", input_str
     )
-    return corrected_str
+    # removing AI comment,if it is contained response.
+    start = 0
+    end = len(corrected_str)
+    for str_i in range(len(corrected_str)):
+        if corrected_str[str_i]=='{':
+            start = str_i
+            break
+    for str_i in range(len(corrected_str))[::-1]:
+        if corrected_str[str_i]=='}':
+            end = str_i
+            break
+    return corrected_str[start:end+1]
 
 class AutoGPTOutputThoughtParser(BaseAutoGPTOutputParser):
     def parse(self, text: str) -> AutoGPTAction:
@@ -50,7 +61,7 @@ class AutoGPTOutputThoughtParser(BaseAutoGPTOutputParser):
         except (KeyError, TypeError):
             # If the command is null or incomplete, return an erroneous tool
             return AutoGPTThoughts(
-                name="ERROR", args={"content": f"Incomplete thiughts: {parsed}"}
+                name="ERROR", args={"content": f"Incomplete thoughts: {parsed}"}
             )
 
 

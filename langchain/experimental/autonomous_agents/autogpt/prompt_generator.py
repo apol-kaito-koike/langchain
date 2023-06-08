@@ -114,7 +114,7 @@ class PromptGenerator:
             f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
             f"Performance Evaluation:\n"
             f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            f"You should only respond in JSON format as described below "
+            f"You must only respond in JSON format as described below "
             f"\nResponse Format: \n{formatted_response_format} "
             f"\nEnsure the response can be parsed by Python json.loads"
         )
@@ -151,14 +151,13 @@ def get_prompt(tools: List[BaseTool]) -> str:
     )
 
     prompt_generator.add_constraint(
-        "all information you can use is based on fact"
+        "all information you can use is based on a knowledge"
     )
     prompt_generator.add_constraint(
-        "if a URL is not useful for seek, you dont use this URL for your seeking."
+        "if you think your answer is ambiguous or uncertain, you should survey more information about your goal."
+        "you should manage your goals step-by-step."
     )
-    prompt_generator.add_constraint(
-        ""
-    )
+
 
     # Add commands to the PromptGenerator object
     for tool in tools:
