@@ -8,7 +8,10 @@ from langchain.chains.conversational_retrieval.base import (
     ChatVectorDBChain,
     ConversationalRetrievalChain,
 )
+from langchain.chains.flare.base import FlareChain
 from langchain.chains.graph_qa.base import GraphQAChain
+from langchain.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain.chains.graph_qa.nebulagraph import NebulaGraphQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_bash.base import LLMBashChain
@@ -57,10 +60,13 @@ __all__ = [
     "HypotheticalDocumentEmbedder",
     "ChatVectorDBChain",
     "GraphQAChain",
+    "GraphCypherQAChain",
     "ConstitutionalChain",
     "QAGenerationChain",
     "RetrievalQA",
     "RetrievalQAWithSourcesChain",
     "ConversationalRetrievalChain",
     "OpenAPIEndpointChain",
+    "FlareChain",
+    "NebulaGraphQAChain",
 ]
