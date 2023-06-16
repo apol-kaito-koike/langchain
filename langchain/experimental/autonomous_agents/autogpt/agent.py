@@ -93,6 +93,7 @@ class AutoGPT:
                             "Please evaluate my thought process, reasoning, criticism, plan, and provide a concise paragraph outlining potential improvements."\
                             "Consider adding or removing ideas that do not align with my role and explaining why and do not loop action, prioritizing thoughts based on their significance,"\
                             "or simply refining my overall thought process. your response should be string sentense style, and be considered your memory. \n"\
+                            "note: \n your response should be a paragraph instead of using bullet points.\n"\
                             "{feedback_thoughts}'\n"\
                             'memory:{memory}'
         
