@@ -155,7 +155,6 @@ def get_prompt(tools: List[BaseTool]) -> str:
     )
     prompt_generator.add_constraint(
         "if you think your answer is ambiguous or uncertain, you should survey more information about your goal."
-        "you should manage your goals step-by-step."
     )
 
 
