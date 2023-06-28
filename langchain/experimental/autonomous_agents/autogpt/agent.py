@@ -89,7 +89,7 @@ class AutoGPT:
 
         summarize_chain = load_summarize_chain(llm,chain_type='stuff')
 
-        feedback_prompt_text = "Below is a message from me, an AI Agent, assuming the role of {ai_role}.whilst keeping knowledge of my slight limitations as an AI Agent "\
+        feedback_prompt_text = "Below is a message from me, an AI Agent, assuming the role of {ai_role}. whilst keeping knowledge of my slight limitations as an AI Agent "\
                             "Please evaluate my thought process, reasoning, criticism, plan, and provide a concise paragraph outlining potential improvements."\
                             "Consider adding or removing ideas that do not align with my role and explaining why and do not loop action, prioritizing thoughts based on their significance,"\
                             "or simply refining my overall thought process. your response should be string sentense style, and be considered your memory. \n"\
@@ -158,9 +158,9 @@ class AutoGPT:
             plan = thoughts.get("plan", "")
             thought = thoughts.get("text", "")
             criticism = thoughts.get("criticism", "")
-            feedback_thoughts = thought + reasoning + plan + criticism
+            feedback_thoughts = thought + '\n' + reasoning + '\n'  + plan + '\n'  + criticism + '\n' 
             feedback_response =  self.feedback_chain.run(
-                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts,'memory':self.memory}
+                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts,'memory':self.full_message_history[-15:]}
             )
         else:
             status = gpt_thoughts.name
