@@ -18,10 +18,11 @@ from langchain.experimental.autonomous_agents.autogpt.prompt import AutoGPTPromp
 from langchain.experimental.autonomous_agents.autogpt.prompt_generator import (
     FINISH_NAME,
 )
+from langchain.memory import ChatMessageHistory
 from langchain.prompts import PromptTemplate
 from langchain.schema import (
     AIMessage,
-    BaseMessage,
+    BaseChatMessageHistory,
     Document,
     HumanMessage,
     SystemMessage,
@@ -32,9 +33,6 @@ from langchain.vectorstores.base import VectorStoreRetriever
 
 import json
 import tiktoken
-
-
-
 
 
 class AutoGPT:
@@ -51,17 +49,18 @@ class AutoGPT:
         output_parser: BaseAutoGPTOutputParser,
         tools: List[BaseTool],
         feedback_tool: Optional[HumanInputRun] = None,
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
         self_feedback_in_the_loop:bool = True
     ):
         self.ai_name = ai_name
         self.ai_role = ai_role
         self.memory = memory
-        self.full_message_history: List[BaseMessage] = []
         self.next_action_count = 0
         self.chain = chain
         self.output_parser = output_parser
         self.tools = tools
         self.feedback_tool = feedback_tool
+        self.chat_history_memory = chat_history_memory or ChatMessageHistory()
         self.feedback_chain = feedback_chain
         self.summarize_chain = summarize_chain
         self.self_feedback_in_the_loop = self_feedback_in_the_loop
@@ -77,6 +76,7 @@ class AutoGPT:
         llm: BaseChatModel,
         human_in_the_loop: bool = False,
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
+        chat_history_memory: Optional[BaseChatMessageHistory] = None,
         self_feedback_in_the_loop:bool = True
     ) -> AutoGPT:
         prompt = AutoGPTPrompt(
@@ -118,6 +118,7 @@ class AutoGPT:
             tools=tools,
             summarize_chain=summarize_chain,
             feedback_tool=human_feedback_tool,
+            chat_history_memory=chat_history_memory,
             self_feedback_in_the_loop=self_feedback_in_the_loop,
         )
     
@@ -160,7 +161,7 @@ class AutoGPT:
             criticism = thoughts.get("criticism", "")
             feedback_thoughts = thought + '\n' + reasoning + '\n'  + plan + '\n'  + criticism + '\n' 
             feedback_response =  self.feedback_chain.run(
-                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts,'memory':self.full_message_history[-15:]}
+                {'ai_role':self.ai_role, 'feedback_thoughts':feedback_thoughts,'memory':self.chat_history_memory.messages[-30:]}
             )
         else:
             status = gpt_thoughts.name
@@ -187,15 +188,16 @@ class AutoGPT:
             # Send message to AI, get response
             assistant_reply = self.chain.run(
                 goals=goals,
-                messages=self.full_message_history,
+                messages=self.chat_history_memory.messages,
                 memory=self.memory,
                 user_input=user_input,
             )
             print('assistant_reply:\n',assistant_reply)
             print('='*40)
             # Print Assistant thoughts
-            self.full_message_history.append(HumanMessage(content=user_input))
-            self.full_message_history.append(AIMessage(content=assistant_reply))
+            print(assistant_reply)
+            self.chat_history_memory.add_message(HumanMessage(content=user_input))
+            self.chat_history_memory.add_message(AIMessage(content=assistant_reply))
 
             action = self.output_parser.parse(assistant_reply)
             # Get command name and arguments
@@ -241,7 +243,7 @@ class AutoGPT:
             
 
             self.memory.add_documents([Document(page_content=memory_to_add)])
-            self.full_message_history.append(SystemMessage(content=result))
+            self.chat_history_memory.add_message(SystemMessage(content=result))
 
             # get self feedback comment
             if (self.self_feedback_in_the_loop) and (action.name != FINISH_NAME ):
@@ -256,7 +258,7 @@ class AutoGPT:
                     print('feedback:\n',feedback)
                     print('='*40)
                     self.memory.add_documents([Document(page_content=feedback_memory_to_add)])
-                    self.full_message_history.append(AIMessage(content=feedback))
+                    self.chat_history_memory.add_message(AIMessage(content=feedback))
 
             if loop_count > 50:
                 print('over 50 loops. so,I will stop this loop')
