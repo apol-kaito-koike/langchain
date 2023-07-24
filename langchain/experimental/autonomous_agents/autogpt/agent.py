@@ -190,7 +190,7 @@ class AutoGPT:
                 memory=self.memory,
                 user_input=user_input,
             )
-            print('assistant_reply:\n',assistant_reply)
+            
             print('='*40)
             # Print Assistant thoughts
             print(assistant_reply)

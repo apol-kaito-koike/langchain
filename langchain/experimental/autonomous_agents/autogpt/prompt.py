@@ -17,7 +17,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
     ai_role: str
     tools: List[BaseTool]
     token_counter: Callable[[str], int]
-    send_token_limit: int = 3196
+    send_token_limit: int = 4096
 
 
     def construct_full_prompt(self, goals: List[str]) -> str:
@@ -54,7 +54,7 @@ class AutoGPTPrompt(BaseChatPromptTemplate, BaseModel):
         relevant_memory_tokens = sum(
             [self.token_counter(doc) for doc in relevant_memory]
         )
-        while used_tokens + relevant_memory_tokens > 2000:
+        while used_tokens + relevant_memory_tokens > 4000:
             relevant_memory = relevant_memory[:-1]
             relevant_memory_tokens = sum(
                 [self.token_counter(doc) for doc in relevant_memory]
